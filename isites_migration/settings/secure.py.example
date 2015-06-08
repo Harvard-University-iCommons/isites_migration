@@ -1,0 +1,15 @@
+# Replace the {{ }} tokens with the correct values for your environment
+# and copy this file to secure.py
+
+SECURE_SETTINGS = {
+    'enable_debug': '{{ secure_settings.enable_debug }}',
+    'canvas_token': '{{ secure_settings.canvas_token }}',
+    'canvas_url': '{{ secure_settings.canvas_url }}',
+    'aws_access_key_id': '{{ secure_settings.aws_access_key_id }}',
+    'aws_access_key': '{{ secure_settings.aws_access_key }}',
+    'db_termtool_name': '{{ secure_settings.db_termtool_name }}',
+    'db_termtool_user': '{{ secure_settings.db_termtool_user }}',
+    'db_termtool_password': '{{ secure_settings.db_termtool_password }}',
+    'db_termtool_host': '{{ secure_settings.db_termtool_host }}',
+    'db_termtool_port': '{{ secure_settings.db_termtool_port }}',
+}
