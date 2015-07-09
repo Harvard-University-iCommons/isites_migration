@@ -1,5 +1,4 @@
 Django==1.8.0
-psycopg2
 ims_lti_py
 requests
 boto==2.38.0

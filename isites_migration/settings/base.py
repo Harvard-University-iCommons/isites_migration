@@ -169,7 +169,7 @@ SLIDE_TOOL_ID = 11804
 
 AWS_ACCESS_KEY_ID = SECURE_SETTINGS.get('aws_access_key_id')
 AWS_ACCESS_KEY = SECURE_SETTINGS.get('aws_access_key')
-AWS_EXPORT_BUCKET_SLIDE_TOOL = 'export-slide-tool'
+AWS_EXPORT_BUCKET_SLIDE_TOOL = 'isites-slide-data'
 
 _DEFAULT_LOG_LEVEL = SECURE_SETTINGS.get('log_level', 'DEBUG')
 
