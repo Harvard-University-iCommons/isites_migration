@@ -165,7 +165,8 @@ ICOMMONS_COMMON = {
     },
 }
 
-SLIDE_TOOL_ID = 11804
+# SLIDE_TOOL_ID = 11804  # QA tool ID
+SLIDE_TOOL_ID = 10864  # PROD tool ID
 
 AWS_ACCESS_KEY_ID = SECURE_SETTINGS.get('aws_access_key_id')
 AWS_ACCESS_KEY = SECURE_SETTINGS.get('aws_access_key')
