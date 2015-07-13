@@ -53,7 +53,17 @@ class Command(BaseCommand):
         except Site.DoesNotExist:
             raise CommandError('Could not find iSite for the keyword provided.')
 
-        topics = Topic.objects.filter(site=site, tool_id=settings.SLIDE_TOOL_ID)
+        topic_sql_query = """
+        SELECT t.topic_id AS topic_id, t.title AS title
+        FROM topic t, page_content pc, page p, site s
+        WHERE
+        s.keyword = '%s' AND
+        p.site_id = s.site_id AND
+        pc.page_id = p.page_id AND
+        t.topic_id = pc.topic_id AND
+        t.tool_id = %d
+        """
+        topics = Topic.objects.raw(topic_sql_query, [keyword, settings.SLIDE_TOOL_ID])
         for topic in topics:
             logger.info("Exporting files for topic %d %s", topic.topic_id, topic.title)
             topic_data = {

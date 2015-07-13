@@ -6,6 +6,8 @@ CREATE SYNONYM file_node_attribute FOR icb.file_node_attribute;
 CREATE SYNONYM metadata_cv FOR icb.metadata_cv;
 CREATE SYNONYM topic_metadata_set FOR icb.topic_metadata_set;
 CREATE SYNONYM image_metadata FOR icb.image_metadata;
+CREATE SYNONYM page_content FOR icb.page_content;
+CREATE SYNONYM page FOR icb.page;
 
 GRANT SELECT ON storage_node TO termtool;
 GRANT SELECT ON file_quota TO termtool;
@@ -15,3 +17,5 @@ GRANT SELECT ON file_node_attribute TO termtool;
 GRANT SELECT ON metadata_cv TO termtool;
 GRANT SELECT ON topic_metadata_set TO termtool;
 GRANT SELECT ON image_metadata TO termtool;
+GRANT SELECT ON page_content TO termtool;
+GRANT SELECT ON page TO termtool;
