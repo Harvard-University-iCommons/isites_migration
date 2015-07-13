@@ -61,7 +61,7 @@ class Command(BaseCommand):
         p.site_id = s.site_id AND
         pc.page_id = p.page_id AND
         t.topic_id = pc.topic_id AND
-        t.tool_id = %d
+        t.tool_id = %s
         """
         topics = Topic.objects.raw(topic_sql_query, [keyword, settings.SLIDE_TOOL_ID])
         for topic in topics:
