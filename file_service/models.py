@@ -141,3 +141,22 @@ class ImageMetadata(models.Model):
 
     def __unicode__(self):
         return self.file_name
+
+
+class TopicText(models.Model):
+    text_id = models.IntegerField(primary_key=True)
+    topic_id = models.IntegerField()
+    name = models.CharField(max_length=150)
+    title = models.CharField(max_length=250)
+    type = models.CharField(max_length=20)
+    default_text = models.CharField(max_length=1)
+    source_text = models.TextField()
+    processed_text = models.TextField()
+    modified_on = models.DateTimeField()
+    modified_by = models.CharField(max_length=50)
+
+    class Meta:
+        db_table = 'topic_text'
+
+    def __unicode__(self):
+        return self.title
