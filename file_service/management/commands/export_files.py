@@ -129,9 +129,10 @@ class Command(BaseCommand):
                     logger.error("Failed to find storage node for file node %d", file_node.file_node_id)
                     continue
 
-                source_file = os.path.join(storage_node_location, file_node.physical_location)
+                physical_location = file_node.physical_location.lstrip('/')
+                source_file = os.path.join(storage_node_location, physical_location)
                 export_file = os.path.join(
-                    self.export_directory, keyword, topic_title, file_node.physical_location
+                    self.export_directory, keyword, topic_title, physical_location
                 )
                 try:
                     os.makedirs(os.path.dirname(export_file))
@@ -151,7 +152,7 @@ class Command(BaseCommand):
     def _export_topic_text(self, topic, keyword, topic_title):
         for topic_text in TopicText.objects.filter(topic_id=topic.topic_id):
             export_file = os.path.join(
-                self.export_directory, keyword, topic_title, topic_text.name
+                self.export_directory, keyword, topic_title, topic_text.name.lstrip('/')
             )
             try:
                 os.makedirs(os.path.dirname(export_file))
