@@ -6,6 +6,7 @@ import zipfile
 import mimetypes
 import json
 import ssl
+import time
 if hasattr(ssl, '_create_unverified_context'):
     ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -126,46 +127,50 @@ class Command(BaseCommand):
 
     def _export_file_repository(self, file_repository, keyword, topic_title):
         logger.info("Exporting files for file_repository %s", file_repository.file_repository_id)
-        query_set = FileNode.objects.filter(file_repository=file_repository).select_related('storage_node').only(
+        query_set = FileNode.objects.filter(
+            file_repository=file_repository,
+            file_type='file'
+        ).select_related('storage_node').only(
             'file_node_id', 'file_type', 'storage_node', 'physical_location', 'file_path', 'file_name', 'encoding'
         )
+        start = time.time()
         for file_node in query_set:
-            if file_node.file_type == 'file':
-                if file_node.storage_node:
-                    storage_node_location = file_node.storage_node.physical_location
-                elif file_repository.storage_node:
-                    storage_node_location = file_repository.storage_node.physical_location
-                else:
-                    logger.error("Failed to find storage node for file node %d", file_node.file_node_id)
-                    continue
+            logger.info("file node query iteration took %s millis", (time.time() - start) * 1000)
+            if file_node.storage_node:
+                storage_node_location = file_node.storage_node.physical_location
+            elif file_repository.storage_node:
+                storage_node_location = file_repository.storage_node.physical_location
+            else:
+                logger.error("Failed to find storage node for file node %d", file_node.file_node_id)
+                continue
 
-                physical_location = file_node.physical_location.lstrip('/')
-                source_file = os.path.join(storage_node_location, physical_location)
-                export_file = os.path.join(
-                    self.export_directory,
-                    keyword,
-                    topic_title,
-                    file_node.file_path.lstrip('/'),
-                    file_node.file_name.lstrip('/')
-                )
-                try:
-                    os.makedirs(os.path.dirname(export_file))
-                except os.error:
-                    pass
+            physical_location = file_node.physical_location.lstrip('/')
+            source_file = os.path.join(storage_node_location, physical_location)
+            export_file = os.path.join(
+                self.export_directory,
+                keyword,
+                topic_title,
+                file_node.file_path.lstrip('/'),
+                file_node.file_name.lstrip('/')
+            )
+            try:
+                os.makedirs(os.path.dirname(export_file))
+            except os.error:
+                pass
 
-                if file_node.encoding == 'gzip':
-                    with gzip.open(source_file, 'rb') as s_file:
-                        with open(export_file, 'w') as d_file:
-                            for line in s_file:
-                                d_file.write(line)
-                else:
-                    shutil.copy(source_file, export_file)
+            if file_node.encoding == 'gzip':
+                with gzip.open(source_file, 'rb') as s_file:
+                    with open(export_file, 'w') as d_file:
+                        for line in s_file:
+                            d_file.write(line)
+            else:
+                shutil.copy(source_file, export_file)
 
-                logger.info("Copied file %s to export location %s", source_file, export_file)
+            logger.info("Copied file %s to export location %s", source_file, export_file)
 
     def _export_topic_text(self, topic, keyword, topic_title):
         logger.info("Exporting text for topic %d %s", topic.topic_id, topic_title)
-        for topic_text in TopicText.objects.filter(topic_id=topic.topic_id):
+        for topic_text in TopicText.objects.filter(topic_id=topic.topic_id).only('text_id', 'name', 'source_text'):
             export_file = os.path.join(
                 self.export_directory, keyword, topic_title, topic_text.name.lstrip('/')
             )
