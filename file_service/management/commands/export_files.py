@@ -134,7 +134,7 @@ class Command(BaseCommand):
                     self.export_directory, keyword, topic_title, file_node.physical_location
                 )
                 try:
-                    os.makedirs(os.dirname(export_file))
+                    os.makedirs(os.path.dirname(export_file))
                 except os.error:
                     pass
 
@@ -154,7 +154,7 @@ class Command(BaseCommand):
                 self.export_directory, keyword, topic_title, topic_text.name
             )
             try:
-                os.makedirs(os.dirname(export_file))
+                os.makedirs(os.path.dirname(export_file))
             except os.error:
                 pass
 
