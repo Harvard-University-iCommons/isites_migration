@@ -83,12 +83,11 @@ class Command(BaseCommand):
 
         topics = Topic.objects.filter(site=site).exclude(tool_id__in=settings.EXPORT_FILES_EXCLUDED_TOOL_IDS)
         for topic in topics:
-            logger.info("Exporting files for topic %d %s", topic.topic_id, topic.title)
             file_repository_id = "icb.topic%s.files" % topic.topic_id
             try:
                 file_repository = FileRepository.objects.get(file_repository_id=file_repository_id)
             except FileRepository.DoesNotExist:
-                logger.error("FileRepository does not exist for %s", file_repository_id)
+                logger.info("FileRepository does not exist for %s", file_repository_id)
                 continue
 
             if topic.title:
@@ -96,6 +95,7 @@ class Command(BaseCommand):
             else:
                 topic_title = 'no_title_%s' % topic.topic_id
 
+            logger.info("Exporting files for topic %d %s", topic.topic_id, topic_title)
             self._export_file_repository(file_repository)
             self._export_topic_text(topic, topic_title)
 
