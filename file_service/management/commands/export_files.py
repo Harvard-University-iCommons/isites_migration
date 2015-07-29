@@ -88,7 +88,7 @@ class Command(BaseCommand):
         for topic in query_set:
             file_repository_id = "icb.topic%s.files" % topic.topic_id
             try:
-                file_repository = FileRepository.objects.selected_related('storage_node').only(
+                file_repository = FileRepository.objects.select_related('storage_node').only(
                     'file_repository_id', 'storage_node'
                 ).get(file_repository_id=file_repository_id)
             except FileRepository.DoesNotExist:
