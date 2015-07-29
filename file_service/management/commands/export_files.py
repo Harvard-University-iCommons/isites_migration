@@ -133,10 +133,7 @@ class Command(BaseCommand):
         ).select_related('storage_node').only(
             'file_node_id', 'file_type', 'storage_node', 'physical_location', 'file_path', 'file_name', 'encoding'
         )
-        logger.info(query_set.query)
-        start = time.time()
         for file_node in query_set:
-            logger.info("file node query iteration took %s millis", (time.time() - start) * 1000)
             if file_node.storage_node:
                 storage_node_location = file_node.storage_node.physical_location
             elif file_repository.storage_node:
