@@ -137,7 +137,7 @@ class Command(BaseCommand):
                 physical_location = file_node.physical_location.lstrip('/')
                 source_file = os.path.join(storage_node_location, physical_location)
                 export_file = os.path.join(
-                    self.export_directory, keyword, topic_title, physical_location
+                    self.export_directory, keyword, topic_title, file_node.file_path, file_node.file_name
                 )
                 try:
                     os.makedirs(os.path.dirname(export_file))
