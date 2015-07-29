@@ -96,7 +96,7 @@ class Command(BaseCommand):
                 topic_title = 'no_title_%s' % topic.topic_id
 
             logger.info("Exporting files for topic %d %s", topic.topic_id, topic_title)
-            self._export_file_repository(file_repository)
+            self._export_file_repository(file_repository, topic_tile)
             self._export_topic_text(topic, topic_title)
 
         keyword_export_path = os.path.join(self.export_directory, keyword)
