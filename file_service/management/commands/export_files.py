@@ -159,7 +159,7 @@ class Command(BaseCommand):
                 logger.info("Copied file %s to export location %s", source_file, export_file)
 
     def _export_topic_text(self, topic, keyword, topic_title):
-        logger.info("Exporting text for topic %d %s", topic.id, topic_title)
+        logger.info("Exporting text for topic %d %s", topic.topic_id, topic_title)
         for topic_text in TopicText.objects.filter(topic_id=topic.topic_id):
             export_file = os.path.join(
                 self.export_directory, keyword, topic_title, topic_text.name.lstrip('/')
