@@ -49,7 +49,7 @@ class Command(BaseCommand):
         super(Command, self).__init__(*args, **kwargs)
         self.export_directory = settings.EXPORT_DIR
         self.connection = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_ACCESS_KEY)
-        self.bucket = self.connection.get_bucket(settings.AWS_EXPORT_BUCKET_ISITES_FILES, validate=False)
+        self.bucket = self.connection.get_bucket(settings.AWS_EXPORT_BUCKET_SLIDE_TOOL, validate=False)
 
     def handle(self, *args, **options):
         term_id = options.get('term_id')
@@ -133,6 +133,7 @@ class Command(BaseCommand):
         ).select_related('storage_node').only(
             'file_node_id', 'file_type', 'storage_node', 'physical_location', 'file_path', 'file_name', 'encoding'
         )
+        start = time.time()
         for file_node in query_set:
             if file_node.storage_node:
                 storage_node_location = file_node.storage_node.physical_location
@@ -165,6 +166,7 @@ class Command(BaseCommand):
                 shutil.copy(source_file, export_file)
 
             logger.info("Copied file %s to export location %s", source_file, export_file)
+        logger.info("file node query iteration took %s millis", (time.time() - start) * 1000)
 
     def _export_topic_text(self, topic, keyword, topic_title):
         logger.info("Exporting text for topic %d %s", topic.topic_id, topic_title)
