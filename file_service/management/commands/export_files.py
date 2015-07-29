@@ -49,7 +49,7 @@ class Command(BaseCommand):
         super(Command, self).__init__(*args, **kwargs)
         self.export_directory = settings.EXPORT_DIR
         self.connection = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_ACCESS_KEY)
-        self.bucket = self.connection.get_bucket(settings.AWS_EXPORT_BUCKET_SLIDE_TOOL, validate=False)
+        self.bucket = self.connection.get_bucket(settings.AWS_EXPORT_BUCKET_ISITES_FILES, validate=False)
 
     def handle(self, *args, **options):
         term_id = options.get('term_id')
