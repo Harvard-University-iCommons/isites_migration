@@ -88,7 +88,9 @@ class Command(BaseCommand):
         for topic in query_set:
             file_repository_id = "icb.topic%s.files" % topic.topic_id
             try:
-                file_repository = FileRepository.objects.get(file_repository_id=file_repository_id)
+                file_repository = FileRepository.objects.get(file_repository_id=file_repository_id).only(
+                    'file_repository_id', 'storage_node'
+                )
             except FileRepository.DoesNotExist:
                 logger.info("FileRepository does not exist for %s", file_repository_id)
                 continue
@@ -124,7 +126,10 @@ class Command(BaseCommand):
 
     def _export_file_repository(self, file_repository, keyword, topic_title):
         logger.info("Exporting files for file_repository %s", file_repository.file_repository_id)
-        for file_node in FileNode.objects.filter(file_repository=file_repository):
+        query_set = FileNode.objects.filter(file_repository=file_repository).only(
+            'file_node_id', 'storage_node', 'file_type', 'physical_location', 'file_path', 'file_name', 'encoding'
+        )
+        for file_node in query_set:
             if file_node.file_type == 'file':
                 if file_node.storage_node:
                     storage_node_location = file_node.storage_node.physical_location
