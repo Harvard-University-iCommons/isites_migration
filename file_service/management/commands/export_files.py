@@ -81,8 +81,11 @@ class Command(BaseCommand):
         except Site.DoesNotExist:
             raise CommandError('Could not find iSite for the keyword provided.')
 
-        topics = Topic.objects.filter(site=site).exclude(tool_id__in=settings.EXPORT_FILES_EXCLUDED_TOOL_IDS)
-        for topic in topics:
+        query_set = Topic.objects.filter(site=site).exclude(tool_id__in=settings.EXPORT_FILES_EXCLUDED_TOOL_IDS).only(
+            'topic_id', 'title'
+        )
+        logger.info('Attempting to export files for %d topics', query_set.count())
+        for topic in query_set:
             file_repository_id = "icb.topic%s.files" % topic.topic_id
             try:
                 file_repository = FileRepository.objects.get(file_repository_id=file_repository_id)
@@ -99,11 +102,13 @@ class Command(BaseCommand):
             self._export_file_repository(file_repository, keyword, topic_title)
             self._export_topic_text(topic, keyword, topic_title)
 
+        zip_path_index = len(self.export_directory) + 1
         keyword_export_path = os.path.join(self.export_directory, keyword)
         z_file = zipfile.ZipFile(os.path.join(self.export_directory, "%s.zip" % keyword), 'w')
         for root, dirs, files in os.walk(keyword_export_path):
             for file in files:
-                z_file.write(os.path.join(root, file))
+                file_path = os.path.join(root, file)
+                z_file.write(file_path, file_path[zip_path_index:])
         z_file.close()
         shutil.rmtree(keyword_export_path)
 
