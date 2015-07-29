@@ -98,7 +98,6 @@ class Command(BaseCommand):
             else:
                 topic_title = 'no_title_%s' % topic.topic_id
 
-            logger.info("Exporting files for topic %d %s", topic.topic_id, topic_title)
             self._export_file_repository(file_repository, keyword, topic_title)
             self._export_topic_text(topic, keyword, topic_title)
 
@@ -124,6 +123,7 @@ class Command(BaseCommand):
         logger.info("Finished exporting files for keyword %s to S3 bucket %s", keyword, self.bucket.name)
 
     def _export_file_repository(self, file_repository, keyword, topic_title):
+        logger.info("Exporting files for file_repository %s", file_repository.file_repository_id)
         for file_node in FileNode.objects.filter(file_repository=file_repository):
             if file_node.file_type == 'file':
                 if file_node.storage_node:
@@ -137,7 +137,11 @@ class Command(BaseCommand):
                 physical_location = file_node.physical_location.lstrip('/')
                 source_file = os.path.join(storage_node_location, physical_location)
                 export_file = os.path.join(
-                    self.export_directory, keyword, topic_title, file_node.file_path, file_node.file_name
+                    self.export_directory,
+                    keyword,
+                    topic_title,
+                    file_node.file_path.lstrip('/'),
+                    file_node.file_name.lstrip('/')
                 )
                 try:
                     os.makedirs(os.path.dirname(export_file))
@@ -155,6 +159,7 @@ class Command(BaseCommand):
                 logger.info("Copied file %s to export location %s", source_file, export_file)
 
     def _export_topic_text(self, topic, keyword, topic_title):
+        logger.info("Exporting text for topic %d %s", topic.id, topic_title)
         for topic_text in TopicText.objects.filter(topic_id=topic.topic_id):
             export_file = os.path.join(
                 self.export_directory, keyword, topic_title, topic_text.name.lstrip('/')
