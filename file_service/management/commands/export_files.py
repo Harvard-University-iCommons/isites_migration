@@ -52,7 +52,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         term_id = options.get('term_id')
-        keyword = option.get('keyword')
+        keyword = options.get('keyword')
         if term_id:
             self._export_term(term_id)
         elif keyword:
