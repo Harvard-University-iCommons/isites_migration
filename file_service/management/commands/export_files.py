@@ -85,21 +85,21 @@ class Command(BaseCommand):
         )
         logger.info('Attempting to export files for %d topics', query_set.count())
         for topic in query_set:
-            file_repository_id = "icb.topic%s.files" % topic.topic_id
-            try:
-                file_repository = FileRepository.objects.select_related('storage_node').only(
-                    'file_repository_id', 'storage_node'
-                ).get(file_repository_id=file_repository_id)
-            except FileRepository.DoesNotExist:
-                logger.info("FileRepository does not exist for %s", file_repository_id)
-                continue
-
             if topic.title:
                 topic_title = topic.title.strip().replace(' ', '_')
             else:
                 topic_title = 'no_title_%s' % topic.topic_id
 
-            self._export_file_repository(file_repository, keyword, topic_title)
+            file_repository_id = "icb.topic%s.files" % topic.topic_id
+            try:
+                file_repository = FileRepository.objects.select_related('storage_node').only(
+                    'file_repository_id', 'storage_node'
+                ).get(file_repository_id=file_repository_id)
+                self._export_file_repository(file_repository, keyword, topic_title)
+            except FileRepository.DoesNotExist:
+                logger.info("FileRepository does not exist for %s", file_repository_id)
+                continue
+
             self._export_topic_text(topic, keyword, topic_title)
 
         zip_path_index = len(settings.EXPORT_DIR) + 1
