@@ -40,6 +40,13 @@ class Command(BaseCommand):
             default=None,
             help='Provide an iSites keyword'
         ),
+        make_option(
+            '--csv',
+            action='store',
+            dest='csv_path',
+            default=None,
+            help='Provide the path to a csv file containing iSites keyword/Canvas course ID pairs'
+        ),
     )
 
     def __init__(self, *args, **kwargs):
@@ -49,13 +56,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         term_id = options.get('term_id')
+        csv_path = options.get('csv')
         keyword = options.get('keyword')
         if term_id:
             self._export_term(term_id)
+        elif csv_path:
+            self._export_csv(csv_path)
         elif keyword:
             self._export_keyword(keyword)
         else:
-            raise CommandError('You must provide either the --term_id or --keyword option.')
+            raise CommandError('You must provide one of the --term_id, --keyword, or --csv options.')
 
     def _export_term(self, term_id):
         keyword_sql_query = """
@@ -70,6 +80,14 @@ class Command(BaseCommand):
         """
         for cs in CourseSite.objects.raw(keyword_sql_query % term_id):
             self._export_keyword(cs.external_id)
+
+    def _export_csv(self, csv_path):
+        try:
+            with open(csv_path, 'rb') as csv_file:
+                for row in csv.reader(csv_file):
+                    self._export_keyword(row[0])
+        except (IOError, IndexError):
+            raise CommandError("Failed to read csv file %s", csv_path)
 
     def _export_keyword(self, keyword):
         logger.info("Beginning iSites file export for keyword %s to S3 bucket %s", keyword, self.bucket.name)
