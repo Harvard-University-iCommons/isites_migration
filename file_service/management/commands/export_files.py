@@ -6,7 +6,6 @@ import zipfile
 import mimetypes
 import json
 import ssl
-import time
 if hasattr(ssl, '_create_unverified_context'):
     ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -47,7 +46,6 @@ class Command(BaseCommand):
 
     def __init__(self, *args, **kwargs):
         super(Command, self).__init__(*args, **kwargs)
-        self.export_directory = settings.EXPORT_DIR
         self.connection = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_ACCESS_KEY)
         self.bucket = self.connection.get_bucket(settings.AWS_EXPORT_BUCKET_SLIDE_TOOL, validate=False)
 
@@ -104,9 +102,9 @@ class Command(BaseCommand):
             self._export_file_repository(file_repository, keyword, topic_title)
             self._export_topic_text(topic, keyword, topic_title)
 
-        zip_path_index = len(self.export_directory) + 1
-        keyword_export_path = os.path.join(self.export_directory, keyword)
-        z_file = zipfile.ZipFile(os.path.join(self.export_directory, "%s.zip" % keyword), 'w')
+        zip_path_index = len(settings.EXPORT_DIR) + 1
+        keyword_export_path = os.path.join(settings.EXPORT_DIR, keyword)
+        z_file = zipfile.ZipFile(os.path.join(settings.EXPORT_DIR, "%s.zip" % keyword), 'w')
         for root, dirs, files in os.walk(keyword_export_path):
             for file in files:
                 file_path = os.path.join(root, file)
@@ -117,7 +115,7 @@ class Command(BaseCommand):
         export_key = Key(self.bucket)
         export_key.key = "%s.zip" % keyword
         export_key.set_metadata('Content-Type', 'application/zip')
-        keyword_export_file = os.path.join(self.export_directory, export_key.key)
+        keyword_export_file = os.path.join(settings.EXPORT_DIR, export_key.key)
         export_key.set_contents_from_filename(keyword_export_file)
         logger.info("Uploaded file export for keyword %s to S3 Key %s", keyword, export_key.key)
 
@@ -133,7 +131,6 @@ class Command(BaseCommand):
         ).select_related('storage_node').only(
             'file_node_id', 'file_type', 'storage_node', 'physical_location', 'file_path', 'file_name', 'encoding'
         )
-        start = time.time()
         for file_node in query_set:
             if file_node.storage_node:
                 storage_node_location = file_node.storage_node.physical_location
@@ -146,7 +143,7 @@ class Command(BaseCommand):
             physical_location = file_node.physical_location.lstrip('/')
             source_file = os.path.join(storage_node_location, physical_location)
             export_file = os.path.join(
-                self.export_directory,
+                settings.EXPORT_DIR,
                 keyword,
                 topic_title,
                 file_node.file_path.lstrip('/'),
@@ -166,13 +163,12 @@ class Command(BaseCommand):
                 shutil.copy(source_file, export_file)
 
             logger.info("Copied file %s to export location %s", source_file, export_file)
-        logger.info("file node query iteration took %s millis", (time.time() - start) * 1000)
 
     def _export_topic_text(self, topic, keyword, topic_title):
         logger.info("Exporting text for topic %d %s", topic.topic_id, topic_title)
         for topic_text in TopicText.objects.filter(topic_id=topic.topic_id).only('text_id', 'name', 'source_text'):
             export_file = os.path.join(
-                self.export_directory, keyword, topic_title, topic_text.name.lstrip('/')
+                settings.EXPORT_DIR, keyword, topic_title, topic_text.name.lstrip('/')
             )
             try:
                 os.makedirs(os.path.dirname(export_file))
