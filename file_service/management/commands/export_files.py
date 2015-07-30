@@ -76,6 +76,11 @@ class Command(BaseCommand):
     def _export_keyword(self, keyword):
         logger.info("Beginning iSites file export for keyword %s to S3 bucket %s", keyword, self.bucket.name)
         try:
+            os.makedirs(os.path.join(settings.EXPORT_DIR, keyword))
+        except os.error:
+            pass
+
+        try:
             site = Site.objects.get(keyword=keyword)
         except Site.DoesNotExist:
             raise CommandError('Could not find iSite for the keyword provided.')
