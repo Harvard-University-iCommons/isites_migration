@@ -1,4 +1,5 @@
 import logging
+import csv
 import json
 import time
 import ssl
@@ -68,31 +69,39 @@ class Command(BaseCommand):
             )
 
         import_count = len(self.canvas_progress_urls)
+        failed_count = 0
         while self.canvas_progress_urls:
             time.sleep(2)
             completed_imports = []
+            failed_imports = []
             for progress_url in self.canvas_progress_urls:
                 progress = json.loads(SDK_CONTEXT.session.request('GET', progress_url).text)
-                if progress['workflow_state'] == 'completed':
+                workflow_state = progress['workflow_state']
+                if workflow_state == 'completed':
                     completed_imports.append(progress_url)
-            for progress_url in completed_imports:
+                elif workflow_state == 'failed':
+                    failed_imports.append(progress_url)
+                    failed_count += 1
+
+            for progress_url in completed_imports + failed_imports:
                 self.canvas_progress_urls.remove(progress_url)
             count_processing = len(self.canvas_progress_urls)
             if count_processing:
                 logger.info(
-                    "%d Canvas imports complete, %d still processing",
+                    "%d Canvas imports complete, %d failed, %d processing",
                     len(completed_imports),
+                    len(failed_imports),
                     count_processing
                 )
 
-        logger.info("Completed import of %d iSites file exports.", import_count)
+        logger.info("Completed import of %d iSites file exports, %d failed.", import_count, failed_count)
 
     def _import_csv(self, csv_path):
         logger.info("Importing iSites file exports from csv %s", csv_path)
         try:
             with open(csv_path, 'rb') as csv_file:
                 for row in csv.reader(csv_file):
-                    self.import_isite(row[0], row[1])
+                    self._import_isite(row[0], row[1])
         except (IOError, IndexError):
             raise CommandError("Failed to read csv file %s", csv_path)
 

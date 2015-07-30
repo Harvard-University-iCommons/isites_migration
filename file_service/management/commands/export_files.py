@@ -3,8 +3,6 @@ import os
 import shutil
 import gzip
 import zipfile
-import mimetypes
-import json
 import ssl
 if hasattr(ssl, '_create_unverified_context'):
     ssl._create_default_https_context = ssl._create_unverified_context
