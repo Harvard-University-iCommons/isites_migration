@@ -164,10 +164,11 @@ class Command(BaseCommand):
                         folder['hidden'],
                         folder['position']
                     )
+                    logger.info("Locked %s import folder for canvas_course_id %s", keyword, canvas_course_id)
                 except CanvasAPIError:
                     logger.exception(
-                        "Failed to lock file import for canvas_course_id %s and keyword %s",
-                        canvas_course_id,
-                        keyword
+                        "Failed to lock %s import folder for canvas_course_id %s",
+                        keyword,
+                        canvas_course_id
                     )
                 break
