@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = 'Imports iSites file repository export to Canvas'
+    help = 'Migrate iSites file repositories to Canvas'
     option_list = BaseCommand.option_list + (
         make_option(
             '--keyword',
