@@ -14,6 +14,7 @@ from django.core.management.base import BaseCommand, CommandError
 from boto.s3.connection import S3Connection
 
 from canvas_sdk.methods import content_migrations, files
+from canvas_sdk.exceptions import CanvasAPIError
 
 from icommons_common.canvas_utils import SessionInactivityExpirationRC
 
@@ -78,6 +79,7 @@ class Command(BaseCommand):
                 progress = json.loads(SDK_CONTEXT.session.request('GET', progress_url).text)
                 workflow_state = progress['workflow_state']
                 if workflow_state == 'completed':
+                    self._lock_import_folder(canvas_course_id, keyword)
                     completed_imports.append(progress_url)
                 elif workflow_state == 'failed':
                     failed_imports.append(progress_url)
@@ -135,12 +137,37 @@ class Command(BaseCommand):
         return key.generate_url(settings.AWS_EXPORT_DOWNLOAD_TIMEOUT_SECONDS)
 
     def _get_root_folder_for_canvas_course(self, canvas_course_id):
-        folders = json.loads(files.get_folder_courses(
+        return json.loads(files.get_folder_courses(
             SDK_CONTEXT,
             canvas_course_id,
-            ''
+            'root'
+        ).text)
+
+    def _lock_import_folder(self, canvas_course_id, keyword):
+        root = self._get_root_folder_for_canvas_course(canvas_course_id)
+        folders = json.loads(files.list_folders(
+            SDK_CONTEXT,
+            root['id']
         ).text)
         for folder in folders:
-            if not folder.get('parent_folder_id'):
-                return folder
-        return None
+            name = folder['name']
+            if name == keyword:
+                try:
+                    files.update_folder(
+                        SDK_CONTEXT,
+                        folder['id'],
+                        name,
+                        folder['parent_folder_id'],
+                        folder['lock_at'],
+                        folder['unlock_at'],
+                        True,
+                        folder['hidden'],
+                        folder['position']
+                    )
+                except CanvasAPIError:
+                    logger.exception(
+                        "Failed to lock file import for canvas_course_id %s and keyword %s",
+                        canvas_course_id,
+                        keyword
+                    )
+                break
