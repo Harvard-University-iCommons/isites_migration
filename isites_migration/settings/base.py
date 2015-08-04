@@ -166,6 +166,7 @@ ICOMMONS_COMMON = {
 }
 
 EXPORT_DIR = SECURE_SETTINGS.get('export_dir', os.path.join(BASE_DIR, 'export'))
+CANVAS_IMPORT_FOLDER_NAME = 'Unpublished_iSites_Archive'
 
 EXPORT_FILES_EXCLUDED_TOOL_IDS = [10384]  # PROD tool IDs
 # SLIDE_TOOL_ID = 11804  # QA tool ID
@@ -173,6 +174,7 @@ SLIDE_TOOL_ID = 10864  # PROD tool ID
 
 AWS_ACCESS_KEY_ID = SECURE_SETTINGS.get('aws_access_key_id')
 AWS_ACCESS_KEY = SECURE_SETTINGS.get('aws_access_key')
+AWS_EXPORT_DOWNLOAD_TIMEOUT_SECONDS = 60
 AWS_EXPORT_BUCKET_SLIDE_TOOL = 'isites-slide-data'
 AWS_EXPORT_BUCKET_ISITES_FILES = 'isites-slide-data'
 
@@ -220,6 +222,10 @@ LOGGING = {
     },
     'loggers': {
         'file_service': {
+            'handlers': ['console', 'app_logfile'],
+            'level': _DEFAULT_LOG_LEVEL,
+        },
+        'requests': {
             'handlers': ['console', 'app_logfile'],
             'level': _DEFAULT_LOG_LEVEL,
         }

@@ -3,8 +3,6 @@ import os
 import shutil
 import gzip
 import zipfile
-import mimetypes
-import json
 import ssl
 if hasattr(ssl, '_create_unverified_context'):
     ssl._create_default_https_context = ssl._create_unverified_context
@@ -42,6 +40,13 @@ class Command(BaseCommand):
             default=None,
             help='Provide an iSites keyword'
         ),
+        make_option(
+            '--csv',
+            action='store',
+            dest='csv_path',
+            default=None,
+            help='Provide the path to a csv file containing iSites keyword/Canvas course ID pairs'
+        ),
     )
 
     def __init__(self, *args, **kwargs):
@@ -51,13 +56,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         term_id = options.get('term_id')
+        csv_path = options.get('csv')
         keyword = options.get('keyword')
         if term_id:
             self._export_term(term_id)
+        elif csv_path:
+            self._export_csv(csv_path)
         elif keyword:
             self._export_keyword(keyword)
         else:
-            raise CommandError('You must provide either the --term_id or --keyword option.')
+            raise CommandError('You must provide one of the --term_id, --keyword, or --csv options.')
 
     def _export_term(self, term_id):
         keyword_sql_query = """
@@ -73,8 +81,21 @@ class Command(BaseCommand):
         for cs in CourseSite.objects.raw(keyword_sql_query % term_id):
             self._export_keyword(cs.external_id)
 
+    def _export_csv(self, csv_path):
+        try:
+            with open(csv_path, 'rb') as csv_file:
+                for row in csv.reader(csv_file):
+                    self._export_keyword(row[0])
+        except (IOError, IndexError):
+            raise CommandError("Failed to read csv file %s", csv_path)
+
     def _export_keyword(self, keyword):
         logger.info("Beginning iSites file export for keyword %s to S3 bucket %s", keyword, self.bucket.name)
+        try:
+            os.makedirs(os.path.join(settings.EXPORT_DIR, keyword))
+        except os.error:
+            pass
+
         try:
             site = Site.objects.get(keyword=keyword)
         except Site.DoesNotExist:
@@ -85,21 +106,21 @@ class Command(BaseCommand):
         )
         logger.info('Attempting to export files for %d topics', query_set.count())
         for topic in query_set:
-            file_repository_id = "icb.topic%s.files" % topic.topic_id
-            try:
-                file_repository = FileRepository.objects.select_related('storage_node').only(
-                    'file_repository_id', 'storage_node'
-                ).get(file_repository_id=file_repository_id)
-            except FileRepository.DoesNotExist:
-                logger.info("FileRepository does not exist for %s", file_repository_id)
-                continue
-
             if topic.title:
                 topic_title = topic.title.strip().replace(' ', '_')
             else:
                 topic_title = 'no_title_%s' % topic.topic_id
 
-            self._export_file_repository(file_repository, keyword, topic_title)
+            file_repository_id = "icb.topic%s.files" % topic.topic_id
+            try:
+                file_repository = FileRepository.objects.select_related('storage_node').only(
+                    'file_repository_id', 'storage_node'
+                ).get(file_repository_id=file_repository_id)
+                self._export_file_repository(file_repository, keyword, topic_title)
+            except FileRepository.DoesNotExist:
+                logger.info("FileRepository does not exist for %s", file_repository_id)
+                continue
+
             self._export_topic_text(topic, keyword, topic_title)
 
         zip_path_index = len(settings.EXPORT_DIR) + 1
