@@ -162,6 +162,13 @@ class Command(BaseCommand):
                 continue
 
             physical_location = file_node.physical_location.lstrip('/')
+            if not physical_location:
+                # Assume non fs-cow file and use file_path and file_name to construct physical location
+                physical_location = os.path.join(
+                    file_node.file_path.lstrip('/'),
+                    file_node.file_name.lstrip('/')
+                )
+
             source_file = os.path.join(storage_node_location, physical_location)
             export_file = os.path.join(
                 settings.EXPORT_DIR,
