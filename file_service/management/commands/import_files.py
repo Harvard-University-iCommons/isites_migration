@@ -108,24 +108,31 @@ class Command(BaseCommand):
             raise CommandError("Failed to read csv file %s", csv_path)
 
     def _import_isite(self, keyword, canvas_course_id):
-        import_folder = self._get_or_create_import_folder(canvas_course_id, settings.CANVAS_IMPORT_FOLDER_NAME)
-        export_file_url = self._get_export_s3_url(keyword)
-        logger.info("Importing iSites file export from %s to Canvas course %s", export_file_url, canvas_course_id)
-        response = json.loads(content_migrations.create_content_migration_courses(
-            SDK_CONTEXT,
-            canvas_course_id,
-            'zip_file_importer',
-            settings_file_url=self._get_export_s3_url(keyword),
-            settings_folder_id=import_folder['id']
-        ).text)
-        progress_url = response['progress_url']
-        self.canvas_progress_urls.append(progress_url)
-        logger.info(
-            "Created Canvas content migration %s for import from %s to Canvas course %s",
-            progress_url,
-            export_file_url,
-            canvas_course_id
-        )
+        try:
+            import_folder = self._get_or_create_import_folder(canvas_course_id, settings.CANVAS_IMPORT_FOLDER_NAME)
+            export_file_url = self._get_export_s3_url(keyword)
+            logger.info("Importing iSites file export from %s to Canvas course %s", export_file_url, canvas_course_id)
+            response = json.loads(content_migrations.create_content_migration_courses(
+                SDK_CONTEXT,
+                canvas_course_id,
+                'zip_file_importer',
+                settings_file_url=self._get_export_s3_url(keyword),
+                settings_folder_id=import_folder['id']
+            ).text)
+            progress_url = response['progress_url']
+            self.canvas_progress_urls.append(progress_url)
+            logger.info(
+                "Created Canvas content migration %s for import from %s to Canvas course %s",
+                progress_url,
+                export_file_url,
+                canvas_course_id
+            )
+        except Exception:
+            logger.exception(
+                "Failed to complete import for keyword %s and canvas_course_id %s",
+                keyword,
+                canvas_course_id
+            )
 
     def _get_export_s3_url(self, keyword):
         try:
