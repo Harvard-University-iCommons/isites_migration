@@ -85,64 +85,71 @@ class Command(BaseCommand):
         try:
             with open(csv_path, 'rb') as csv_file:
                 for row in csv.reader(csv_file):
-                    self._export_keyword(row[0])
+                    try:
+                        keyword = row[0]
+                        self._export_keyword(keyword)
+                    except Exception:
+                        logger.exception("Failed to complete export for keyword %s", keyword)
         except (IOError, IndexError):
             raise CommandError("Failed to read csv file %s", csv_path)
 
     def _export_keyword(self, keyword):
-        logger.info("Beginning iSites file export for keyword %s to S3 bucket %s", keyword, self.bucket.name)
         try:
-            os.makedirs(os.path.join(settings.EXPORT_DIR, keyword))
-        except os.error:
-            pass
-
-        try:
-            site = Site.objects.get(keyword=keyword)
-        except Site.DoesNotExist:
-            raise CommandError('Could not find iSite for the keyword provided.')
-
-        query_set = Topic.objects.filter(site=site).exclude(tool_id__in=settings.EXPORT_FILES_EXCLUDED_TOOL_IDS).only(
-            'topic_id', 'title'
-        )
-        logger.info('Attempting to export files for %d topics', query_set.count())
-        for topic in query_set:
-            if topic.title:
-                topic_title = topic.title.strip().replace(' ', '_')
-            else:
-                topic_title = 'no_title_%s' % topic.topic_id
-
-            file_repository_id = "icb.topic%s.files" % topic.topic_id
+            logger.info("Beginning iSites file export for keyword %s to S3 bucket %s", keyword, self.bucket.name)
             try:
-                file_repository = FileRepository.objects.select_related('storage_node').only(
-                    'file_repository_id', 'storage_node'
-                ).get(file_repository_id=file_repository_id)
-                self._export_file_repository(file_repository, keyword, topic_title)
-            except FileRepository.DoesNotExist:
-                logger.info("FileRepository does not exist for %s", file_repository_id)
-                continue
+                os.makedirs(os.path.join(settings.EXPORT_DIR, keyword))
+            except os.error:
+                pass
 
-            self._export_topic_text(topic, keyword, topic_title)
+            try:
+                site = Site.objects.get(keyword=keyword)
+            except Site.DoesNotExist:
+                raise CommandError('Could not find iSite for the keyword provided.')
 
-        zip_path_index = len(settings.EXPORT_DIR) + 1
-        keyword_export_path = os.path.join(settings.EXPORT_DIR, keyword)
-        z_file = zipfile.ZipFile(os.path.join(settings.EXPORT_DIR, "%s.zip" % keyword), 'w')
-        for root, dirs, files in os.walk(keyword_export_path):
-            for file in files:
-                file_path = os.path.join(root, file)
-                z_file.write(file_path, file_path[zip_path_index:])
-        z_file.close()
-        shutil.rmtree(keyword_export_path)
+            query_set = Topic.objects.filter(site=site).exclude(tool_id__in=settings.EXPORT_FILES_EXCLUDED_TOOL_IDS).only(
+                'topic_id', 'title'
+            )
+            logger.info('Attempting to export files for %d topics', query_set.count())
+            for topic in query_set:
+                if topic.title:
+                    topic_title = topic.title.strip().replace(' ', '_')
+                else:
+                    topic_title = 'no_title_%s' % topic.topic_id
 
-        export_key = Key(self.bucket)
-        export_key.key = "%s.zip" % keyword
-        export_key.set_metadata('Content-Type', 'application/zip')
-        keyword_export_file = os.path.join(settings.EXPORT_DIR, export_key.key)
-        export_key.set_contents_from_filename(keyword_export_file)
-        logger.info("Uploaded file export for keyword %s to S3 Key %s", keyword, export_key.key)
+                file_repository_id = "icb.topic%s.files" % topic.topic_id
+                try:
+                    file_repository = FileRepository.objects.select_related('storage_node').only(
+                        'file_repository_id', 'storage_node'
+                    ).get(file_repository_id=file_repository_id)
+                    self._export_file_repository(file_repository, keyword, topic_title)
+                except FileRepository.DoesNotExist:
+                    logger.info("FileRepository does not exist for %s", file_repository_id)
+                    continue
 
-        os.remove(keyword_export_file)
+                self._export_topic_text(topic, keyword, topic_title)
 
-        logger.info("Finished exporting files for keyword %s to S3 bucket %s", keyword, self.bucket.name)
+            zip_path_index = len(settings.EXPORT_DIR) + 1
+            keyword_export_path = os.path.join(settings.EXPORT_DIR, keyword)
+            z_file = zipfile.ZipFile(os.path.join(settings.EXPORT_DIR, "%s.zip" % keyword), 'w')
+            for root, dirs, files in os.walk(keyword_export_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    z_file.write(file_path, file_path[zip_path_index:])
+            z_file.close()
+            shutil.rmtree(keyword_export_path)
+
+            export_key = Key(self.bucket)
+            export_key.key = "%s.zip" % keyword
+            export_key.set_metadata('Content-Type', 'application/zip')
+            keyword_export_file = os.path.join(settings.EXPORT_DIR, export_key.key)
+            export_key.set_contents_from_filename(keyword_export_file)
+            logger.info("Uploaded file export for keyword %s to S3 Key %s", keyword, export_key.key)
+
+            os.remove(keyword_export_file)
+
+            logger.info("Finished exporting files for keyword %s to S3 bucket %s", keyword, self.bucket.name)
+        except Exception:
+            logger.exception("Failed to complete export for keyword %s", keyword)
 
     def _export_file_repository(self, file_repository, keyword, topic_title):
         logger.info("Exporting files for file_repository %s", file_repository.file_repository_id)
