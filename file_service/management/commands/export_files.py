@@ -193,7 +193,7 @@ class Command(BaseCommand):
                 to_unicode(topic_title),
                 to_unicode(file_node.file_path.lstrip('/')),
                 to_unicode(file_node.file_name.lstrip('/'))
-            )).decode('hex')
+            ))
             try:
                 os.makedirs(os.path.dirname(export_file))
             except os.error:
