@@ -200,9 +200,15 @@ class Command(BaseCommand):
 
             if file_node.encoding == 'gzip':
                 with gzip.open(source_file, 'rb') as s_file:
-                    with open(export_file, 'w') as d_file:
-                        for line in s_file:
-                            d_file.write(to_bytes(line, 'utf8'))
+                    try:
+                        with open(export_file, 'w') as d_file:
+                            for line in s_file:
+                                try:
+                                    d_file.write(to_bytes(line, 'utf8'))
+                                except UnicodeEncodeError:
+                                    print line
+                    except UnicodeEncodeError:
+                        print export_file
             else:
                 shutil.copy(source_file, export_file)
 
