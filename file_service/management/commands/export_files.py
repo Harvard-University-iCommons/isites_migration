@@ -121,7 +121,7 @@ class Command(BaseCommand):
             logger.info('Attempting to export files for %d topics', query_set.count())
             for topic in query_set:
                 if topic.title:
-                    topic_title = to_unicode(topic.title.strip().replace(' ', '_'))
+                    topic_title = topic.title.strip().replace(' ', '_')
                 else:
                     topic_title = 'no_title_%s' % topic.topic_id
 
@@ -189,10 +189,10 @@ class Command(BaseCommand):
             export_file = os.path.join(
                 settings.EXPORT_DIR,
                 keyword,
-                topic_title,
+                to_unicode(topic_title),
                 to_unicode(file_node.file_path.lstrip('/')),
                 to_unicode(file_node.file_name.lstrip('/'))
-            )
+            ).encode('utf8')
             try:
                 os.makedirs(os.path.dirname(export_file))
             except os.error:
@@ -200,15 +200,9 @@ class Command(BaseCommand):
 
             if file_node.encoding == 'gzip':
                 with gzip.open(source_file, 'rb') as s_file:
-                    try:
-                        with open(export_file, 'w') as d_file:
-                            for line in s_file:
-                                try:
-                                    d_file.write(to_bytes(line, 'utf8'))
-                                except UnicodeEncodeError:
-                                    print line
-                    except UnicodeEncodeError:
-                        print export_file.encode('utf8')
+                    with open(export_file, 'w') as d_file:
+                        for line in s_file:
+                            d_file.write(to_bytes(line, 'utf8'))
             else:
                 shutil.copy(source_file, export_file)
 
