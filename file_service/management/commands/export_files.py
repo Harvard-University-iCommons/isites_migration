@@ -187,13 +187,13 @@ class Command(BaseCommand):
                 )
 
             source_file = os.path.join(storage_node_location, physical_location)
-            export_file = os.path.join(
+            export_file = to_bytes(os.path.join(
                 settings.EXPORT_DIR,
                 keyword,
                 to_unicode(topic_title),
                 to_unicode(file_node.file_path.lstrip('/')),
                 to_unicode(file_node.file_name.lstrip('/'))
-            ).encode('utf8')
+            ))
             try:
                 os.makedirs(os.path.dirname(export_file))
             except os.error:
@@ -207,7 +207,7 @@ class Command(BaseCommand):
             else:
                 shutil.copy(source_file, export_file)
 
-            logger.info("Copied file %s to export location %s", source_file, export_file.decode('ascii'))
+            logger.info("Copied file %s to export location %s", source_file, export_file)
 
     def _export_topic_text(self, topic, keyword, topic_title):
         logger.info("Exporting text for topic %d %s", topic.topic_id, topic_title)
