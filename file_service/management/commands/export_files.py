@@ -13,6 +13,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.template.loader import get_template
 from django.template import Context
+from django.db.models import Q
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
@@ -113,12 +114,11 @@ class Command(BaseCommand):
             self._export_readme(keyword)
 
             query_set = Topic.objects.filter(site=site).exclude(
-                tool_id__in=settings.EXPORT_FILES_EXCLUDED_TOOL_IDS,
-                title__in=settings.EXPORT_FILES_EXCLUDED_TOPIC_TITLES
+                Q(tool_id__in=settings.EXPORT_FILES_EXCLUDED_TOOL_IDS) |
+                Q(title__in=settings.EXPORT_FILES_EXCLUDED_TOPIC_TITLES)
             ).only(
                 'topic_id', 'title'
             )
-            print query_set.query
             logger.info('Attempting to export files for %d topics', query_set.count())
             for topic in query_set:
                 if topic.title:
