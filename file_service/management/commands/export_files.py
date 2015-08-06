@@ -17,6 +17,8 @@ from django.template import Context
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
+from kitchen.text.converters import to_bytes
+
 from icommons_common.models import Site, Topic, CourseSite
 
 from file_service.models import FileRepository, FileNode, FileNodeAttribute, ImageMetadata, TopicText
@@ -119,7 +121,7 @@ class Command(BaseCommand):
             logger.info('Attempting to export files for %d topics', query_set.count())
             for topic in query_set:
                 if topic.title:
-                    topic_title = topic.title.strip().replace(' ', '_').encode('utf8')
+                    topic_title = topic.title.strip().replace(' ', '_')
                 else:
                     topic_title = 'no_title_%s' % topic.topic_id
 
@@ -200,7 +202,7 @@ class Command(BaseCommand):
                 with gzip.open(source_file, 'rb') as s_file:
                     with open(export_file, 'w') as d_file:
                         for line in s_file:
-                            d_file.write(line.encode('utf8'))
+                            d_file.write(to_bytes(line, 'utf8'))
             else:
                 shutil.copy(source_file, export_file)
 
@@ -218,7 +220,7 @@ class Command(BaseCommand):
                 pass
 
             with open(export_file, 'w') as f:
-                f.write(topic_text.source_text.encode('utf8'))
+                f.write(to_bytes(topic_text.source_text, 'utf8'))
 
             logger.info("Copied TopicText %d to export location %s", topic_text.text_id, export_file)
 
