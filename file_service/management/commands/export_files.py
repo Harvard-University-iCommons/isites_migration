@@ -110,7 +110,10 @@ class Command(BaseCommand):
 
             self._export_readme(keyword)
 
-            query_set = Topic.objects.filter(site=site).exclude(tool_id__in=settings.EXPORT_FILES_EXCLUDED_TOOL_IDS).only(
+            query_set = Topic.objects.filter(site=site).exclude(
+                tool_id__in=settings.EXPORT_FILES_EXCLUDED_TOOL_IDS,
+                title__in=settings.EXPORT_FILES_EXCLUDED_TOPIC_TITLES
+            ).only(
                 'topic_id', 'title'
             )
             logger.info('Attempting to export files for %d topics', query_set.count())
