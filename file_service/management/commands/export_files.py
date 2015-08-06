@@ -118,6 +118,7 @@ class Command(BaseCommand):
             ).only(
                 'topic_id', 'title'
             )
+            print query_set.query
             logger.info('Attempting to export files for %d topics', query_set.count())
             for topic in query_set:
                 if topic.title:
