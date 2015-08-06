@@ -17,7 +17,7 @@ from django.template import Context
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
 
-from kitchen.text.converters import to_bytes
+from kitchen.text.converters import to_bytes, to_unicode
 
 from icommons_common.models import Site, Topic, CourseSite
 
@@ -121,7 +121,7 @@ class Command(BaseCommand):
             logger.info('Attempting to export files for %d topics', query_set.count())
             for topic in query_set:
                 if topic.title:
-                    topic_title = topic.title.strip().replace(' ', '_')
+                    topic_title = to_unicode(topic.title.strip().replace(' ', '_'))
                 else:
                     topic_title = 'no_title_%s' % topic.topic_id
 
@@ -190,8 +190,8 @@ class Command(BaseCommand):
                 settings.EXPORT_DIR,
                 keyword,
                 topic_title,
-                file_node.file_path.lstrip('/'),
-                file_node.file_name.lstrip('/')
+                to_unicode(file_node.file_path.lstrip('/')),
+                to_unicode(file_node.file_name.lstrip('/'))
             )
             try:
                 os.makedirs(os.path.dirname(export_file))
