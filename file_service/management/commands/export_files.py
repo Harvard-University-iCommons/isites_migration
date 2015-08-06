@@ -208,7 +208,7 @@ class Command(BaseCommand):
                                 except UnicodeEncodeError:
                                     print line
                     except UnicodeEncodeError:
-                        print export_file
+                        print export_file.encode('utf8')
             else:
                 shutil.copy(source_file, export_file)
 
