@@ -169,6 +169,10 @@ EXPORT_DIR = SECURE_SETTINGS.get('export_dir', os.path.join(BASE_DIR, 'export'))
 CANVAS_IMPORT_FOLDER_NAME = 'Unpublished_iSites_Archive'
 
 EXPORT_FILES_EXCLUDED_TOOL_IDS = [10384]  # PROD tool IDs
+EXPORT_FILES_EXCLUDED_TOPIC_TITLES = [
+    'Syllabus Template (Hidden)',
+    'About Course iSites, About the Library Resources Page'
+]
 # SLIDE_TOOL_ID = 11804  # QA tool ID
 SLIDE_TOOL_ID = 10864  # PROD tool ID
 

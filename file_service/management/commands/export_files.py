@@ -11,6 +11,8 @@ from optparse import make_option
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.template.loader import get_template
+from django.template import Context
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
@@ -106,7 +108,12 @@ class Command(BaseCommand):
             except Site.DoesNotExist:
                 raise CommandError('Could not find iSite for the keyword provided.')
 
-            query_set = Topic.objects.filter(site=site).exclude(tool_id__in=settings.EXPORT_FILES_EXCLUDED_TOOL_IDS).only(
+            self._export_readme(keyword)
+
+            query_set = Topic.objects.filter(site=site).exclude(
+                tool_id__in=settings.EXPORT_FILES_EXCLUDED_TOOL_IDS,
+                title__in=settings.EXPORT_FILES_EXCLUDED_TOPIC_TITLES
+            ).only(
                 'topic_id', 'title'
             )
             logger.info('Attempting to export files for %d topics', query_set.count())
@@ -214,3 +221,14 @@ class Command(BaseCommand):
                 f.write(topic_text.source_text)
 
             logger.info("Copied TopicText %d to export location %s", topic_text.text_id, export_file)
+
+    def _export_readme(self, keyword):
+        readme_template = get_template('file_service/export_files_readme.html')
+        content = readme_template.render(Context({}))
+        readme_file = os.path.join(settings.EXPORT_DIR, keyword, 'Readme.html')
+        try:
+            os.makedirs(os.path.dirname(readme_file))
+        except os.error:
+            pass
+        with open(readme_file, 'w') as f:
+            f.write(content)
