@@ -207,7 +207,7 @@ class Command(BaseCommand):
             else:
                 shutil.copy(source_file, export_file)
 
-            logger.info("Copied file %s to export location %s", source_file, export_file)
+            logger.info("Copied file %s to export location %s", source_file, export_file.decode('ascii'))
 
     def _export_topic_text(self, topic, keyword, topic_title):
         logger.info("Exporting text for topic %d %s", topic.topic_id, topic_title)

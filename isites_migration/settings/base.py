@@ -189,10 +189,10 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': u'%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
         },
         'simple': {
-            'format': u'%(levelname)s %(module)s %(message)s'
+            'format': '%(levelname)s %(module)s %(message)s'
         }
     },
     # Borrowing some default filters for app loggers
