@@ -102,7 +102,7 @@ class Command(BaseCommand):
         try:
             logger.info("Beginning iSites file export for keyword %s to S3 bucket %s", keyword, self.bucket.name)
             try:
-                os.makedirs(os.path.join(settings.EXPORT_DIR, keyword))
+                os.makedirs(os.path.join(settings.EXPORT_DIR, settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword))
             except os.error:
                 pass
 
