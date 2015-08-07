@@ -101,7 +101,7 @@ class Command(BaseCommand):
     def _import_csv(self, csv_path):
         logger.info("Importing iSites file exports from csv %s", csv_path)
         try:
-            with open(csv_path, 'rb') as csv_file:
+            with open(csv_path, 'rU') as csv_file:
                 for row in csv.reader(csv_file):
                     self._import_isite(row[0], row[1])
         except (IOError, IndexError):
