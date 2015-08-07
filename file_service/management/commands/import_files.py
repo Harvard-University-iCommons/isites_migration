@@ -75,7 +75,7 @@ class Command(BaseCommand):
             time.sleep(2)
             completed_imports = []
             failed_imports = []
-            for keyword, progress_url in self.canvas_progress_urls.iteritems():
+            for keyword, (canvas_course_id, progress_url) in self.canvas_progress_urls.iteritems():
                 progress = json.loads(SDK_CONTEXT.session.request('GET', progress_url).text)
                 workflow_state = progress['workflow_state']
                 if workflow_state == 'completed':
@@ -120,7 +120,7 @@ class Command(BaseCommand):
                 settings_folder_id=root_folder['id']
             ).text)
             progress_url = response['progress_url']
-            self.canvas_progress_urls[keyword] = progress_url
+            self.canvas_progress_urls[keyword] = (canvas_course_id, progress_url)
             logger.info(
                 "Created Canvas content migration %s for import from %s to Canvas course %s",
                 progress_url,
