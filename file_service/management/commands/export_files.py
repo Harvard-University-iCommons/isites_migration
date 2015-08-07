@@ -232,7 +232,11 @@ class Command(BaseCommand):
     def _export_readme(self, keyword):
         readme_template = get_template('file_service/export_files_readme.html')
         content = readme_template.render(Context({}))
-        readme_file = os.path.join(settings.EXPORT_DIR, settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword, 'Readme.html')
+        readme_file = os.path.join(
+            settings.EXPORT_DIR,
+            settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword,
+            settings.EXPORT_FILES_README_FILENAME
+        )
         try:
             os.makedirs(os.path.dirname(readme_file))
         except os.error:

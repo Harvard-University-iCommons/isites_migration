@@ -166,6 +166,7 @@ ICOMMONS_COMMON = {
 }
 
 EXPORT_DIR = SECURE_SETTINGS.get('export_dir', os.path.join(BASE_DIR, 'export'))
+EXPORT_FILES_README_FILENAME = '_ReadMe_About_Your_iSites_Archive.html'
 CANVAS_IMPORT_FOLDER_PREFIX = 'unpublished_isites_archive_'
 
 EXPORT_FILES_EXCLUDED_TOOL_IDS = [10384]  # PROD tool IDs
