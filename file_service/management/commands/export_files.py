@@ -13,9 +13,12 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.template.loader import get_template
 from django.template import Context
+from django.db.models import Q
 
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
+
+from kitchen.text.converters import to_bytes, to_unicode
 
 from icommons_common.models import Site, Topic, CourseSite
 
@@ -99,7 +102,7 @@ class Command(BaseCommand):
         try:
             logger.info("Beginning iSites file export for keyword %s to S3 bucket %s", keyword, self.bucket.name)
             try:
-                os.makedirs(os.path.join(settings.EXPORT_DIR, keyword))
+                os.makedirs(os.path.join(settings.EXPORT_DIR, settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword))
             except os.error:
                 pass
 
@@ -111,15 +114,15 @@ class Command(BaseCommand):
             self._export_readme(keyword)
 
             query_set = Topic.objects.filter(site=site).exclude(
-                tool_id__in=settings.EXPORT_FILES_EXCLUDED_TOOL_IDS,
-                title__in=settings.EXPORT_FILES_EXCLUDED_TOPIC_TITLES
+                Q(tool_id__in=settings.EXPORT_FILES_EXCLUDED_TOOL_IDS) |
+                Q(title__in=settings.EXPORT_FILES_EXCLUDED_TOPIC_TITLES)
             ).only(
                 'topic_id', 'title'
             )
             logger.info('Attempting to export files for %d topics', query_set.count())
             for topic in query_set:
                 if topic.title:
-                    topic_title = topic.title.strip().replace(' ', '_').encode('utf8')
+                    topic_title = topic.title.strip().replace(' ', '_')
                 else:
                     topic_title = 'no_title_%s' % topic.topic_id
 
@@ -136,8 +139,9 @@ class Command(BaseCommand):
                 self._export_topic_text(topic, keyword, topic_title)
 
             zip_path_index = len(settings.EXPORT_DIR) + 1
-            keyword_export_path = os.path.join(settings.EXPORT_DIR, keyword)
-            z_file = zipfile.ZipFile(os.path.join(settings.EXPORT_DIR, "%s.zip" % keyword), 'w')
+            keyword_export_path = os.path.join(settings.EXPORT_DIR, settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword)
+            zip_filename = os.path.join(settings.EXPORT_DIR, "%s%s.zip" % (settings.CANVAS_IMPORT_FOLDER_PREFIX, keyword))
+            z_file = zipfile.ZipFile(zip_filename, 'w')
             for root, dirs, files in os.walk(keyword_export_path):
                 for file in files:
                     file_path = os.path.join(root, file)
@@ -149,7 +153,7 @@ class Command(BaseCommand):
             export_key.key = "%s.zip" % keyword
             export_key.set_metadata('Content-Type', 'application/zip')
             keyword_export_file = os.path.join(settings.EXPORT_DIR, export_key.key)
-            export_key.set_contents_from_filename(keyword_export_file)
+            export_key.set_contents_from_filename(zip_filename)
             logger.info("Uploaded file export for keyword %s to S3 Key %s", keyword, export_key.key)
 
             os.remove(keyword_export_file)
@@ -184,13 +188,13 @@ class Command(BaseCommand):
                 )
 
             source_file = os.path.join(storage_node_location, physical_location)
-            export_file = os.path.join(
+            export_file = to_bytes(os.path.join(
                 settings.EXPORT_DIR,
-                keyword,
-                topic_title,
-                file_node.file_path.lstrip('/'),
-                file_node.file_name.lstrip('/')
-            )
+                settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword,
+                to_unicode(topic_title),
+                to_unicode(file_node.file_path.lstrip('/')),
+                to_unicode(file_node.file_name.lstrip('/'))
+            ))
             try:
                 os.makedirs(os.path.dirname(export_file))
             except os.error:
@@ -200,7 +204,7 @@ class Command(BaseCommand):
                 with gzip.open(source_file, 'rb') as s_file:
                     with open(export_file, 'w') as d_file:
                         for line in s_file:
-                            d_file.write(line.encode('utf8'))
+                            d_file.write(to_bytes(line, 'utf8'))
             else:
                 shutil.copy(source_file, export_file)
 
@@ -210,7 +214,10 @@ class Command(BaseCommand):
         logger.info("Exporting text for topic %d %s", topic.topic_id, topic_title)
         for topic_text in TopicText.objects.filter(topic_id=topic.topic_id).only('text_id', 'name', 'source_text'):
             export_file = os.path.join(
-                settings.EXPORT_DIR, keyword, topic_title, topic_text.name.lstrip('/')
+                settings.EXPORT_DIR,
+                settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword,
+                topic_title,
+                topic_text.name.lstrip('/')
             )
             try:
                 os.makedirs(os.path.dirname(export_file))
@@ -218,14 +225,14 @@ class Command(BaseCommand):
                 pass
 
             with open(export_file, 'w') as f:
-                f.write(topic_text.source_text.encode('utf8'))
+                f.write(to_bytes(topic_text.source_text, 'utf8'))
 
             logger.info("Copied TopicText %d to export location %s", topic_text.text_id, export_file)
 
     def _export_readme(self, keyword):
         readme_template = get_template('file_service/export_files_readme.html')
         content = readme_template.render(Context({}))
-        readme_file = os.path.join(settings.EXPORT_DIR, keyword, 'Readme.html')
+        readme_file = os.path.join(settings.EXPORT_DIR, settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword, 'Readme.html')
         try:
             os.makedirs(os.path.dirname(readme_file))
         except os.error:

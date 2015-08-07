@@ -79,7 +79,7 @@ class Command(BaseCommand):
                 progress = json.loads(SDK_CONTEXT.session.request('GET', progress_url).text)
                 workflow_state = progress['workflow_state']
                 if workflow_state == 'completed':
-                    self._lock_import_folder(canvas_course_id, settings.CANVAS_IMPORT_FOLDER_NAME)
+                    self._lock_canvas_folder(canvas_course_id, settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword)
                     completed_imports.append(progress_url)
                 elif workflow_state == 'failed':
                     failed_imports.append(progress_url)
@@ -109,7 +109,7 @@ class Command(BaseCommand):
 
     def _import_isite(self, keyword, canvas_course_id):
         try:
-            import_folder = self._get_or_create_import_folder(canvas_course_id, settings.CANVAS_IMPORT_FOLDER_NAME)
+            root_folder = self._get_root_folder_for_canvas_course(canvas_course_id)
             export_file_url = self._get_export_s3_url(keyword)
             logger.info("Importing iSites file export from %s to Canvas course %s", export_file_url, canvas_course_id)
             response = json.loads(content_migrations.create_content_migration_courses(
@@ -117,7 +117,7 @@ class Command(BaseCommand):
                 canvas_course_id,
                 'zip_file_importer',
                 settings_file_url=self._get_export_s3_url(keyword),
-                settings_folder_id=import_folder['id']
+                settings_folder_id=root_folder['id']
             ).text)
             progress_url = response['progress_url']
             self.canvas_progress_urls.append(progress_url)
@@ -151,7 +151,7 @@ class Command(BaseCommand):
             'root'
         ).text)
 
-    def _get_or_create_import_folder(self, canvas_course_id, folder_name):
+    def _get_import_folder(self, canvas_course_id, folder_name):
         root = self._get_root_folder_for_canvas_course(canvas_course_id)
         folders = json.loads(files.list_folders(SDK_CONTEXT, root['id']).text)
         import_folder = None
@@ -159,19 +159,10 @@ class Command(BaseCommand):
             if folder['name'] == folder_name:
                 import_folder = folder
                 break
-        if not import_folder:
-            try:
-                import_folder = json.loads(files.create_folder_courses(
-                    SDK_CONTEXT, canvas_course_id, folder_name, root['id'], None, None, None, None, None, None
-                ).text)
-                logger.info("Created import folder %s for canvas_course_id %s", folder_name, canvas_course_id)
-            except CanvasAPIError:
-                logger.exception("Failed to create import folder %s for canvas_course_id %s", folder_name, canvas_course_id)
-                raise
         return import_folder
 
-    def _lock_import_folder(self, canvas_course_id, folder_name):
-        import_folder = self._get_or_create_import_folder(canvas_course_id, folder_name)
+    def _lock_canvas_folder(self, canvas_course_id, folder_name):
+        import_folder = self._get_import_folder(canvas_course_id, folder_name)
         try:
             files.update_folder(
                 SDK_CONTEXT,
