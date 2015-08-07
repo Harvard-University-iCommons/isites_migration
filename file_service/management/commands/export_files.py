@@ -139,8 +139,11 @@ class Command(BaseCommand):
                 self._export_topic_text(topic, keyword, topic_title)
 
             zip_path_index = len(settings.EXPORT_DIR) + 1
-            keyword_export_path = os.path.join(settings.EXPORT_DIR, keyword)
-            z_file = zipfile.ZipFile(os.path.join(settings.EXPORT_DIR, "%s.zip" % keyword), 'w')
+            keyword_export_path = os.path.join(settings.EXPORT_DIR, settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword)
+            z_file = zipfile.ZipFile(
+                os.path.join(settings.EXPORT_DIR, "%s%s.zip" % (settings.CANVAS_IMPORT_FOLDER_PREFIX, keyword)),
+                'w'
+            )
             for root, dirs, files in os.walk(keyword_export_path):
                 for file in files:
                     file_path = os.path.join(root, file)
@@ -189,7 +192,7 @@ class Command(BaseCommand):
             source_file = os.path.join(storage_node_location, physical_location)
             export_file = to_bytes(os.path.join(
                 settings.EXPORT_DIR,
-                keyword,
+                settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword,
                 to_unicode(topic_title),
                 to_unicode(file_node.file_path.lstrip('/')),
                 to_unicode(file_node.file_name.lstrip('/'))
@@ -213,7 +216,10 @@ class Command(BaseCommand):
         logger.info("Exporting text for topic %d %s", topic.topic_id, topic_title)
         for topic_text in TopicText.objects.filter(topic_id=topic.topic_id).only('text_id', 'name', 'source_text'):
             export_file = os.path.join(
-                settings.EXPORT_DIR, keyword, topic_title, topic_text.name.lstrip('/')
+                settings.EXPORT_DIR,
+                settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword,
+                topic_title,
+                topic_text.name.lstrip('/')
             )
             try:
                 os.makedirs(os.path.dirname(export_file))
@@ -228,7 +234,7 @@ class Command(BaseCommand):
     def _export_readme(self, keyword):
         readme_template = get_template('file_service/export_files_readme.html')
         content = readme_template.render(Context({}))
-        readme_file = os.path.join(settings.EXPORT_DIR, keyword, 'Readme.html')
+        readme_file = os.path.join(settings.EXPORT_DIR, settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword, 'Readme.html')
         try:
             os.makedirs(os.path.dirname(readme_file))
         except os.error:
