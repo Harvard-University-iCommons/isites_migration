@@ -53,7 +53,7 @@ class Command(BaseCommand):
         super(Command, self).__init__(*args, **kwargs)
         self.connection = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_ACCESS_KEY)
         self.bucket = self.connection.get_bucket(settings.AWS_EXPORT_BUCKET_SLIDE_TOOL, validate=False)
-        self.canvas_progress_urls = []
+        self.canvas_progress_urls = {}
 
     def handle(self, *args, **options):
         keyword = options.get('keyword')
@@ -75,18 +75,18 @@ class Command(BaseCommand):
             time.sleep(2)
             completed_imports = []
             failed_imports = []
-            for progress_url in self.canvas_progress_urls:
+            for keyword, progress_url in self.canvas_progress_urls.iteritems():
                 progress = json.loads(SDK_CONTEXT.session.request('GET', progress_url).text)
                 workflow_state = progress['workflow_state']
                 if workflow_state == 'completed':
                     self._lock_canvas_folder(canvas_course_id, settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword)
-                    completed_imports.append(progress_url)
+                    completed_imports.append(keyword)
                 elif workflow_state == 'failed':
-                    failed_imports.append(progress_url)
+                    failed_imports.append(keyword)
                     failed_count += 1
 
-            for progress_url in completed_imports + failed_imports:
-                self.canvas_progress_urls.remove(progress_url)
+            for keyword in completed_imports + failed_imports:
+                self.canvas_progress_urls.pop(keyword, None)
             count_processing = len(self.canvas_progress_urls)
             if count_processing:
                 logger.info(
@@ -120,7 +120,7 @@ class Command(BaseCommand):
                 settings_folder_id=root_folder['id']
             ).text)
             progress_url = response['progress_url']
-            self.canvas_progress_urls.append(progress_url)
+            self.canvas_progress_urls[keyword] = progress_url
             logger.info(
                 "Created Canvas content migration %s for import from %s to Canvas course %s",
                 progress_url,
