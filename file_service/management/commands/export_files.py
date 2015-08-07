@@ -153,11 +153,10 @@ class Command(BaseCommand):
             export_key = Key(self.bucket)
             export_key.key = "%s.zip" % keyword
             export_key.set_metadata('Content-Type', 'application/zip')
-            keyword_export_file = os.path.join(settings.EXPORT_DIR, export_key.key)
             export_key.set_contents_from_filename(zip_filename)
             logger.info("Uploaded file export for keyword %s to S3 Key %s", keyword, export_key.key)
 
-            os.remove(keyword_export_file)
+            os.remove(zip_filename)
 
             logger.info("Finished exporting files for keyword %s to S3 bucket %s", keyword, self.bucket.name)
         except Exception:
