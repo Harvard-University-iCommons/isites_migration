@@ -89,7 +89,7 @@ class Command(BaseCommand):
 
     def _export_csv(self, csv_path):
         try:
-            with open(csv_path, 'rb') as csv_file:
+            with open(csv_path, 'rU') as csv_file:
                 for row in csv.reader(csv_file):
                     try:
                         keyword = row[0]
