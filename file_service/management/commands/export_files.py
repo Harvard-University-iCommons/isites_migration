@@ -140,8 +140,9 @@ class Command(BaseCommand):
 
             zip_path_index = len(settings.EXPORT_DIR) + 1
             keyword_export_path = os.path.join(settings.EXPORT_DIR, settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword)
+            zip_file = "%s%s.zip" % (settings.CANVAS_IMPORT_FOLDER_PREFIX, keyword)
             z_file = zipfile.ZipFile(
-                os.path.join(settings.EXPORT_DIR, "%s%s.zip" % (settings.CANVAS_IMPORT_FOLDER_PREFIX, keyword)),
+                os.path.join(settings.EXPORT_DIR, zip_file),
                 'w'
             )
             for root, dirs, files in os.walk(keyword_export_path):
@@ -155,7 +156,7 @@ class Command(BaseCommand):
             export_key.key = "%s.zip" % keyword
             export_key.set_metadata('Content-Type', 'application/zip')
             keyword_export_file = os.path.join(settings.EXPORT_DIR, export_key.key)
-            export_key.set_contents_from_filename(keyword_export_file)
+            export_key.set_contents_from_filename(zip_file)
             logger.info("Uploaded file export for keyword %s to S3 Key %s", keyword, export_key.key)
 
             os.remove(keyword_export_file)
