@@ -59,6 +59,7 @@ class Command(BaseCommand):
         super(Command, self).__init__(*args, **kwargs)
         self.connection = S3Connection(settings.AWS_ACCESS_KEY_ID, settings.AWS_ACCESS_KEY)
         self.bucket = self.connection.get_bucket(settings.AWS_EXPORT_BUCKET_SLIDE_TOOL, validate=False)
+        self.failures = []
 
     def handle(self, *args, **options):
         term_id = options.get('term_id')
@@ -91,11 +92,8 @@ class Command(BaseCommand):
         try:
             with open(csv_path, 'rU') as csv_file:
                 for row in csv.reader(csv_file):
-                    try:
-                        keyword = row[0]
-                        self._export_keyword(keyword)
-                    except Exception:
-                        logger.exception("Failed to complete export for keyword %s", keyword)
+                    keyword = row[0]
+                    self._export_keyword(keyword)
         except (IOError, IndexError):
             raise CommandError("Failed to read csv file %s", csv_path)
 
@@ -161,6 +159,7 @@ class Command(BaseCommand):
             logger.info("Finished exporting files for keyword %s to S3 bucket %s", keyword, self.bucket.name)
         except Exception:
             logger.exception("Failed to complete export for keyword %s", keyword)
+            self.failures.append(keyword)
 
     def _export_file_repository(self, file_repository, keyword, topic_title):
         logger.info("Exporting files for file_repository %s", file_repository.file_repository_id)
@@ -220,8 +219,8 @@ class Command(BaseCommand):
             export_file = os.path.join(
                 settings.EXPORT_DIR,
                 settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword,
-                topic_title,
-                topic_text.name.lstrip('/')
+                to_unicode(topic_title),
+                to_unicode(topic_text.name.lstrip('/'))
             )
             try:
                 os.makedirs(os.path.dirname(export_file))
