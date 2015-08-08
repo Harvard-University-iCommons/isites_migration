@@ -206,7 +206,11 @@ class Command(BaseCommand):
                         for line in s_file:
                             d_file.write(to_bytes(line, 'utf8'))
             else:
-                shutil.copy(source_file, export_file)
+                try:
+                    shutil.copy(source_file, export_file)
+                except IOError:
+                    logger.exception("Could not find source file %s", source_file)
+                    continue
 
             logger.info("Copied file %s to export location %s", source_file, export_file)
 

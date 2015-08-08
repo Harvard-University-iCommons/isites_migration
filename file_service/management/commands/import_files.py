@@ -70,7 +70,8 @@ class Command(BaseCommand):
             )
 
         import_count = len(self.canvas_progress_urls)
-        failed_count = 0
+        completed = set()
+        failed = set()
         while self.canvas_progress_urls:
             time.sleep(2)
             completed_imports = []
@@ -80,23 +81,34 @@ class Command(BaseCommand):
                 workflow_state = progress['workflow_state']
                 if workflow_state == 'completed':
                     self._lock_canvas_folder(canvas_course_id, settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword)
-                    completed_imports.append(keyword)
+                    completed_imports.append((keyword, canvas_course_id))
                 elif workflow_state == 'failed':
-                    failed_imports.append(keyword)
-                    failed_count += 1
+                    failed_imports.append((keyword, canvas_course_id))
 
-            for keyword in completed_imports + failed_imports:
+            for (keyword, canvas_course_id) in completed_imports + failed_imports:
                 self.canvas_progress_urls.pop(keyword, None)
+
+            completed.add(completed_imports)
+            failed.add(failed_imports)
             count_processing = len(self.canvas_progress_urls)
             if count_processing:
                 logger.info(
                     "%d Canvas imports complete, %d failed, %d processing",
-                    len(completed_imports),
-                    len(failed_imports),
+                    len(completed),
+                    len(failed),
                     count_processing
                 )
 
-        logger.info("Completed import of %d iSites file exports, %d failed.", import_count, failed_count)
+        logger.info(
+            "Completed import of %d iSites file exports, %d successful %d failed.",
+            import_count,
+            len(completed),
+            len(failed)
+        )
+        for (keyword, canvas_course_id) in completed:
+            logger.info("%s:%s successful", keyword, canvas_course_id)
+        for (keyword, canvas_course_id) in failed:
+            logger.info("%s:%s failed", keyword, canvas_course_id)
 
     def _import_csv(self, csv_path):
         logger.info("Importing iSites file exports from csv %s", csv_path)
