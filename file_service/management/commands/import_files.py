@@ -88,8 +88,8 @@ class Command(BaseCommand):
             for (keyword, canvas_course_id) in completed_imports + failed_imports:
                 self.canvas_progress_urls.pop(keyword, None)
 
-            completed.add(completed_imports)
-            failed.add(failed_imports)
+            completed.update(completed_imports)
+            failed.update(failed_imports)
             count_processing = len(self.canvas_progress_urls)
             if count_processing:
                 logger.info(
