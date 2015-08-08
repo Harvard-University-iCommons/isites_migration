@@ -216,12 +216,12 @@ class Command(BaseCommand):
     def _export_topic_text(self, topic, keyword, topic_title):
         logger.info("Exporting text for topic %d %s", topic.topic_id, topic_title)
         for topic_text in TopicText.objects.filter(topic_id=topic.topic_id).only('text_id', 'name', 'source_text'):
-            export_file = os.path.join(
+            export_file = to_bytes(os.path.join(
                 settings.EXPORT_DIR,
                 settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword,
                 to_unicode(topic_title),
                 to_unicode(topic_text.name.lstrip('/'))
-            )
+            ))
             try:
                 os.makedirs(os.path.dirname(export_file))
             except os.error:
