@@ -44,8 +44,8 @@ class Command(BaseCommand):
         csv_path = options.get('csv_path')
 
         if csv_path:
-            call_command('export_files', csv=csv_path)
-            call_command('import_files', csv=csv_path)
+            call_command('export_files', csv_path=csv_path)
+            call_command('import_files', csv_path=csv_path)
         elif keyword and canvas_course_id:
             call_command('export_files', keyword=keyword, canvas_course_id=canvas_course_id)
             call_command('import_files', keyword=keyword, canvas_course_id=canvas_course_id)
