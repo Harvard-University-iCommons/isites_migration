@@ -63,7 +63,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         term_id = options.get('term_id')
-        csv_path = options.get('csv')
+        csv_path = options.get('csv_path')
         keyword = options.get('keyword')
         if term_id:
             self._export_term(term_id)
