@@ -186,7 +186,7 @@ class Command(BaseCommand):
                     file_node.file_name.lstrip('/')
                 )
 
-            source_file = to_bytes(os.path.join(to_unicode(storage_node_location), to_unicode(physical_location)))
+            source_file = os.path.join(storage_node_location, physical_location)
             export_file = to_bytes(os.path.join(
                 settings.EXPORT_DIR,
                 settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword,
@@ -200,10 +200,19 @@ class Command(BaseCommand):
                 pass
 
             if file_node.encoding == 'gzip':
-                with gzip.open(source_file, 'rb') as s_file:
-                    with open(export_file, 'w') as d_file:
-                        for line in s_file:
-                            d_file.write(to_bytes(line, 'utf8'))
+                try:
+                    with gzip.open(source_file, 'rb') as s_file:
+                        with open(export_file, 'w') as d_file:
+                            for line in s_file:
+                                d_file.write(to_bytes(line, 'utf8'))
+                except IOError:
+                    logger.exception(
+                        "Failed to export file node %s from file repository % in keyword %s",
+                        file_node.file_node_id,
+                        file_repository.file_repository_id,
+                        keyword
+                    )
+                    continue
             else:
                 try:
                     shutil.copy(source_file, export_file)
