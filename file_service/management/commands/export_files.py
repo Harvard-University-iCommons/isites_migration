@@ -186,7 +186,7 @@ class Command(BaseCommand):
                     file_node.file_name.lstrip('/')
                 )
 
-            source_file = os.path.join(storage_node_location, physical_location)
+            source_file = to_bytes(os.path.join(to_unicode(storage_node_location), to_unicode(physical_location)))
             export_file = to_bytes(os.path.join(
                 settings.EXPORT_DIR,
                 settings.CANVAS_IMPORT_FOLDER_PREFIX + keyword,
