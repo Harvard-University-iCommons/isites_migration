@@ -1,5 +1,7 @@
 # iSites Migration
 
+***NOTE: As of 2021 the HUIT AT UW team is no longer supporting this project.***
+
 This project provides tools to assist the migration from iSites to Canvas.
 
 ## Installation
